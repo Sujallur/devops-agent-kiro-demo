@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Demo checkout service (Lambda + CloudWatch alarm). No public endpoint. Code is shipped by scripts/deploy-code.sh.
+
+Resources:
+  CheckoutRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Tags:
+        - { Key: Project, Value: DevOpsAgentKiroDemo }
+
+  CheckoutFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: demo-checkout
+      Runtime: python3.12
+      Handler: checkout.handler
+      Timeout: 10
+      Role: !GetAtt CheckoutRole.Arn
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              return {"statusCode": 200, "body": "placeholder - run scripts/deploy-code.sh"}
+      Tags:
+        - { Key: Project, Value: DevOpsAgentKiroDemo }
+
+  CheckoutErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: demo-checkout-errors
+      AlarmDescription: demo-checkout Lambda is returning errors
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - { Name: FunctionName, Value: !Ref CheckoutFunction }
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching

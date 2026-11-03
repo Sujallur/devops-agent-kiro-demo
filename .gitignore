@@ -1,0 +1,6 @@
+.env
+*.log
+__pycache__/
+.pytest_cache/
+# Keeps the answer key out of the public repo so the agent has to find the bug itself
+demo-private/
